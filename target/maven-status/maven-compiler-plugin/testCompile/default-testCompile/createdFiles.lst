@@ -1,0 +1,17 @@
+pages\InsurancePage.class
+base\BaseClass.class
+stepdefinitions\LoginSteps.class
+pages\LoginPage.class
+stepdefinitions\Hooks.class
+utils\DriverFactory.class
+runners\TestRunner.class
+runners\RegressionRunner.class
+runners\SanityRunner.class
+runners\SmokeRunner.class
+utils\WaitUtils.class
+pages\PatientPage.class
+stepdefinitions\OpenEMRSteps.class
+stepdefinitions\PatientSteps.class
+pages\AdminPage.class
+stepdefinitions\AdminSteps.class
+utils\DriverManager.class

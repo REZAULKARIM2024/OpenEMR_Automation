@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Cucumber" time="74.201" tests="5" skipped="0" failures="0" errors="0">
+<testcase classname="OpenEMR Admin Actions" name="Logout successfully" time="15.34">
+<system-out><![CDATA[
+Given user opens login page.................................................passed
+When user enters username "admin" and password "pass".......................passed
+And user selects language "Default - English (Standard)"....................passed
+And user clicks login button................................................passed
+Then user should see dashboard page.........................................passed
+And user logs out...........................................................passed
+]]></system-out>
+</testcase>
+<testcase classname="OpenEMR Login" name="Successful login" time="10.981">
+<system-out><![CDATA[
+Given user opens login page.................................................passed
+When user enters username "admin" and password "pass".......................passed
+And user selects language "Default - English (Standard)"....................passed
+And user clicks login button................................................passed
+Then user should see dashboard page.........................................passed
+]]></system-out>
+</testcase>
+<testcase classname="OpenEMR Login" name="Successful login" time="13.457">
+<system-out><![CDATA[
+Given user opens login page.................................................passed
+When user enters username "admin" and password "pass".......................passed
+And user selects language "Default - English (Standard)"....................passed
+And user clicks login button................................................passed
+Then user should see dashboard page.........................................passed
+]]></system-out>
+</testcase>
+<testcase classname="Patient Management" name="Add new patient successfully" time="17.709">
+<system-out><![CDATA[
+Given user opens login page.................................................passed
+When user enters username "admin" and password "pass".......................passed
+And user selects language "Default - English (Standard)"....................passed
+And user clicks login button................................................passed
+Then user should see dashboard page.........................................passed
+When user navigates to patient section......................................passed
+And user enters patient details "Reza", "Karim", "1988-05-05", "Male".......passed
+And saves the patient.......................................................passed
+Then patient should be added successfully...................................passed
+]]></system-out>
+</testcase>
+<testcase classname="Patient Management" name="Add patient with missing mandatory fields" time="16.325">
+<system-out><![CDATA[
+Given user opens login page.................................................passed
+When user enters username "admin" and password "pass".......................passed
+And user selects language "Default - English (Standard)"....................passed
+And user clicks login button................................................passed
+Then user should see dashboard page.........................................passed
+When user navigates to patient section......................................passed
+And user enters patient details "", "Karim", "1988-05-05", "Male"...........passed
+And saves the patient.......................................................passed
+Then user should see error message "First Name is required".................passed
+]]></system-out>
+</testcase>
+</testsuite>
