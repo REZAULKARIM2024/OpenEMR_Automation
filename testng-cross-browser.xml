@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="OpenEMR Cross-Browser Smoke Suite">
+    <test name="Cross-Browser Tests">
+        <classes>
+            <class name="runners.CrossBrowserRunner"/>
+        </classes>
+    </test>
+</suite>

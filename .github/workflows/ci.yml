@@ -1,0 +1,93 @@
+name: OpenEMR Automation CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+  schedule:
+    # Nightly regression run at 03:00 UTC
+    - cron: "0 3 * * *"
+
+jobs:
+  smoke:
+    name: Smoke suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run smoke tests (headless Chrome)
+        run: mvn -B -Dheadless=true test -DsuiteXmlFile=testng-smoke.xml
+        continue-on-error: false
+
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report
+          path: target/smoke-report.html
+
+  regression:
+    name: Full regression suite (80 scenarios)
+    runs-on: ubuntu-latest
+    needs: smoke
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run full suite (headless Chrome)
+        run: mvn -B -Dheadless=true clean test
+        continue-on-error: true
+
+      - name: Upload Cucumber report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cucumber-report
+          path: |
+            target/cucumber-report.html
+            target/cucumber.json
+            target/surefire-reports/
+
+  cross-browser:
+    name: Cross-browser smoke (Chrome + Firefox)
+    runs-on: ubuntu-latest
+    needs: smoke
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run cross-browser suite
+        run: mvn -B -Dheadless=true -Dbrowser=${{ matrix.browser }} test -DsuiteXmlFile=testng-cross-browser.xml
+        continue-on-error: true
+
+      - name: Upload cross-browser report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cross-browser-report-${{ matrix.browser }}
+          path: target/cross-browser-report.html

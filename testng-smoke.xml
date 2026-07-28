@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="OpenEMR Smoke Suite">
+    <test name="Smoke Tests">
+        <classes>
+            <class name="runners.SmokeRunner"/>
+        </classes>
+    </test>
+</suite>

@@ -1,0 +1,24 @@
+# Build output
+target/
+*.class
+
+# Test / report output
+test-output/
+allure-results/
+allure-report/
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Driver binaries downloaded by WebDriverManager
+~/.cache/selenium/

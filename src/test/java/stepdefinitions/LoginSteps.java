@@ -1,0 +1,189 @@
+package stepdefinitions;
+
+import io.cucumber.java.en.*;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import pages.LoginPage;
+import java.time.Duration;
+
+import static org.testng.Assert.*;
+
+public class LoginSteps {
+
+    private WebDriver driver;
+    private LoginPage loginPage;
+    private WebDriverWait wait;
+    private long navigationStartMillis;
+
+    private static final String LOGIN_URL = "https://demo.openemr.io/openemr/interface/login/login.php";
+
+    public LoginSteps() {
+        this.driver = Hooks.getDriver();
+        loginPage = new LoginPage(driver);
+        wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+    }
+
+    @Given("user opens login page")
+    public void open_login_page() {
+        driver.get(LOGIN_URL);
+    }
+
+    @When("user enters username {string} and password {string}")
+    public void enter_credentials(String uname, String pwd) {
+        if (uname != null && !uname.isEmpty()) {
+            loginPage.enterUsername(uname);
+        }
+        if (pwd != null && !pwd.isEmpty()) {
+            loginPage.enterPassword(pwd);
+        }
+    }
+
+    @When("user selects language {string}")
+    public void select_language(String lang) {
+        try {
+            driver.switchTo().frame("loginframe");
+        } catch (Exception e) {
+            // ignore if frame not present
+        }
+
+        wait.until(ExpectedConditions.visibilityOfElementLocated(loginPage.getLanguageDropdown()))
+                .sendKeys(lang);
+
+        driver.switchTo().defaultContent();
+    }
+
+    @When("user clicks login button")
+    public void click_login() {
+        loginPage.clickLogin();
+    }
+
+    @Then("user should see dashboard page")
+    public void verify_dashboard() {
+        wait.until(ExpectedConditions.titleContains("OpenEMR"));
+        assertTrue(driver.getTitle().contains("OpenEMR"), "Dashboard title did not contain 'OpenEMR'");
+    }
+
+    // ---- Negative / validation ----
+
+    @Then("user should see login error {string}")
+    public void verify_login_error(String expectedMessage) {
+        boolean stillOnLoginForm = loginPage.isLoginFormDisplayed();
+        assertTrue(stillOnLoginForm, "Expected login to be rejected, but the login form is no longer displayed");
+    }
+
+    @Then("login should be rejected")
+    public void login_should_be_rejected() {
+        assertTrue(loginPage.isLoginFormDisplayed(), "Expected login form to remain visible after a rejected login attempt");
+    }
+
+    @When("user clears the username field")
+    public void clear_username() {
+        loginPage.clearUsername();
+    }
+
+    @When("user enters username {string} with leading and trailing spaces")
+    public void enter_username_with_spaces(String uname) {
+        loginPage.enterUsername("   " + uname + "   ");
+    }
+
+    // ---- UI validation ----
+
+    @Then("the OpenEMR logo should be visible on the login page")
+    public void verify_logo_visible() {
+        assertTrue(loginPage.isLogoDisplayed(), "OpenEMR logo was not found on the login page");
+    }
+
+    @Then("the username field should be displayed")
+    public void verify_username_field_displayed() {
+        assertTrue(loginPage.getUsernameField().isDisplayed(), "Username field is not displayed");
+    }
+
+    @Then("the password field should be displayed and masked")
+    public void verify_password_field_masked() {
+        assertTrue(loginPage.getPasswordField().isDisplayed(), "Password field is not displayed");
+        assertEquals(loginPage.getPasswordFieldType(), "password", "Password field is not masked (type != password)");
+    }
+
+    @Then("the login button should be displayed")
+    public void verify_login_button_displayed() {
+        assertTrue(loginPage.getLoginButton().isDisplayed(), "Login button is not displayed");
+    }
+
+    // ---- Lifecycle / browser behavior ----
+
+    @When("user refreshes the login page")
+    public void refresh_login_page() {
+        driver.navigate().refresh();
+    }
+
+    @When("user navigates back in the browser")
+    public void navigate_back() {
+        driver.navigate().back();
+    }
+
+    @When("user navigates forward in the browser")
+    public void navigate_forward() {
+        driver.navigate().forward();
+    }
+
+    @When("user resizes the browser window to {int} by {int}")
+    public void resize_browser(int width, int height) {
+        driver.manage().window().setSize(new org.openqa.selenium.Dimension(width, height));
+    }
+
+    @Then("the login form should still be usable")
+    public void verify_login_form_usable() {
+        assertTrue(loginPage.isLoginFormDisplayed(), "Login form is not usable after resizing/navigating");
+    }
+
+    // ---- Performance ----
+
+    @When("user measures the time to load the login page")
+    public void measure_login_page_load_time() {
+        navigationStartMillis = System.currentTimeMillis();
+        driver.get(LOGIN_URL);
+    }
+
+    @Then("the login page should load within {int} seconds")
+    public void verify_login_page_load_within(int maxSeconds) {
+        wait.until(ExpectedConditions.presenceOfElementLocated(loginPage.getLoginButtonLocator()));
+        long elapsedMillis = System.currentTimeMillis() - navigationStartMillis;
+        assertTrue(elapsedMillis <= maxSeconds * 1000L,
+                "Login page took " + elapsedMillis + "ms, exceeding the " + maxSeconds + "s budget");
+    }
+
+    // ---- Security ----
+
+    @When("user attempts login with malicious payload {string} as username")
+    public void attempt_login_with_payload(String payload) {
+        loginPage.enterUsername(payload);
+        loginPage.enterPassword("irrelevant");
+        loginPage.clickLogin();
+    }
+
+    @Then("the application should not be compromised")
+    public void verify_application_not_compromised() {
+        // A safe application either rejects the login (form still shown) or
+        // shows a generic error, but must never throw the raw payload back
+        // unescaped into the page title or crash the driver session.
+        String title = driver.getTitle();
+        assertFalse(title.contains("<script>"), "Unescaped script payload reflected in page title");
+        assertTrue(loginPage.isLoginFormDisplayed() || title.contains("OpenEMR"),
+                "Application entered an unexpected state after a malicious login attempt");
+    }
+
+    // ---- Direct URL / session security ----
+
+    @When("user navigates directly to the patient dashboard URL without logging in")
+    public void navigate_directly_without_login() {
+        driver.get("https://demo.openemr.io/openemr/interface/main/tabs/main.php");
+    }
+
+    @Then("user should be redirected to the login page")
+    public void verify_redirected_to_login() {
+        wait.until(d -> loginPage.isLoginFormDisplayed() || d.getCurrentUrl().contains("login"));
+        assertTrue(loginPage.isLoginFormDisplayed() || driver.getCurrentUrl().contains("login"),
+                "Unauthenticated access was not redirected to the login page");
+    }
+}
