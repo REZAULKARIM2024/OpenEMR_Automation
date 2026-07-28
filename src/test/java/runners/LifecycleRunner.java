@@ -7,7 +7,7 @@ import io.cucumber.testng.CucumberOptions;
     features = "src/test/resources/features",
     glue = {"stepdefinitions"},
     tags = "@lifecycle",
-    plugin = {"pretty", "html:target/lifecycle-report.html"}
+    plugin = {"pretty", "html:target/lifecycle-report.html", "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"}
 )
 public class LifecycleRunner extends AbstractTestNGCucumberTests {
 }

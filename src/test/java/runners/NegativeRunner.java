@@ -7,7 +7,7 @@ import io.cucumber.testng.CucumberOptions;
     features = "src/test/resources/features",
     glue = {"stepdefinitions"},
     tags = "@negative",
-    plugin = {"pretty", "html:target/negative-report.html"}
+    plugin = {"pretty", "html:target/negative-report.html", "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"}
 )
 public class NegativeRunner extends AbstractTestNGCucumberTests {
 }

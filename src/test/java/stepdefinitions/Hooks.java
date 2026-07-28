@@ -12,6 +12,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
+import utils.ConfigReader;
 
 /**
  * Central WebDriver lifecycle management.
@@ -32,10 +33,8 @@ public class Hooks {
     @Before
     public void setup() {
 
-        String browser = System.getProperty("browser", "chrome").toLowerCase();
-        boolean headless = Boolean.parseBoolean(
-                System.getProperty("headless", System.getenv("CI") != null ? "true" : "false")
-        );
+        String browser = ConfigReader.getBrowser().toLowerCase();
+        boolean headless = ConfigReader.isHeadless();
 
         switch (browser) {
 

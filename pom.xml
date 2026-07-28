@@ -21,6 +21,8 @@
         <cucumber.version>7.15.0</cucumber.version>
         <testng.version>7.9.0</testng.version>
         <wdm.version>5.8.0</wdm.version>
+        <allure.version>2.24.0</allure.version>
+        <jacoco.version>0.8.11</jacoco.version>
     </properties>
 
     <dependencies>
@@ -93,6 +95,15 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Allure: richer HTML test reporting, layered on top of the Cucumber
+             plugin already registered in each runner's @CucumberOptions -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-cucumber7-jvm</artifactId>
+            <version>${allure.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -107,14 +118,56 @@
                 </configuration>
             </plugin>
 
-            <!-- Surefire -->
+            <!-- Surefire: runs testng.xml, which wires up both the Cucumber
+                 suite (TestRunner, all 80 scenarios) and the plain-Java unit
+                 tests (unit.*Test) side by side. Category-specific runners
+                 (SmokeRunner, SecurityRunner, ...) are invoked directly via
+                 -DsuiteXmlFile=<name>.xml or from the IDE. -->
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
-                    <includes>
-                        <include>**/TestRunner.java</include>
-                    </includes>
+                    <argLine>${argLine}</argLine>
+                    <suiteXmlFiles>
+                        <suiteXmlFile>testng.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                </configuration>
+            </plugin>
+
+            <!-- JaCoCo: code coverage for this module's own Java code
+                 (step definitions, page objects, utils). See the
+                 "Code Coverage (JaCoCo)" README section. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Allure Maven: `mvn allure:report` / `mvn allure:serve` render
+                 target/allure-results (produced by the allure-cucumber7-jvm
+                 adapter registered in each runner) into an HTML report. -->
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>2.12.0</version>
+                <configuration>
+                    <reportVersion>${allure.version}</reportVersion>
+                    <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
                 </configuration>
             </plugin>
 

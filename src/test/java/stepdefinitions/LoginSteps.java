@@ -5,6 +5,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import pages.LoginPage;
+import utils.ConfigReader;
 import java.time.Duration;
 
 import static org.testng.Assert.*;
@@ -16,17 +17,15 @@ public class LoginSteps {
     private WebDriverWait wait;
     private long navigationStartMillis;
 
-    private static final String LOGIN_URL = "https://demo.openemr.io/openemr/interface/login/login.php";
-
     public LoginSteps() {
         this.driver = Hooks.getDriver();
         loginPage = new LoginPage(driver);
-        wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(ConfigReader.getDefaultTimeoutSeconds()));
     }
 
     @Given("user opens login page")
     public void open_login_page() {
-        driver.get(LOGIN_URL);
+        driver.get(ConfigReader.getBaseUrl());
     }
 
     @When("user enters username {string} and password {string}")
@@ -142,7 +141,7 @@ public class LoginSteps {
     @When("user measures the time to load the login page")
     public void measure_login_page_load_time() {
         navigationStartMillis = System.currentTimeMillis();
-        driver.get(LOGIN_URL);
+        driver.get(ConfigReader.getBaseUrl());
     }
 
     @Then("the login page should load within {int} seconds")
@@ -177,7 +176,7 @@ public class LoginSteps {
 
     @When("user navigates directly to the patient dashboard URL without logging in")
     public void navigate_directly_without_login() {
-        driver.get("https://demo.openemr.io/openemr/interface/main/tabs/main.php");
+        driver.get(ConfigReader.getDashboardUrl());
     }
 
     @Then("user should be redirected to the login page")

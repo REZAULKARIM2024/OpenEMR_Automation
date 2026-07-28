@@ -7,7 +7,7 @@ import io.cucumber.testng.CucumberOptions;
     features = "src/test/resources/features",
     glue = {"stepdefinitions"},
     tags = "@accessibility",
-    plugin = {"pretty", "html:target/accessibility-report.html"}
+    plugin = {"pretty", "html:target/accessibility-report.html", "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"}
 )
 public class AccessibilityRunner extends AbstractTestNGCucumberTests {
 }

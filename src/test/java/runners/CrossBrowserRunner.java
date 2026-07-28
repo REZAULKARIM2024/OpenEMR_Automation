@@ -7,7 +7,7 @@ import io.cucumber.testng.CucumberOptions;
     features = "src/test/resources/features",
     glue = {"stepdefinitions"},
     tags = "@cross-browser",
-    plugin = {"pretty", "html:target/cross-browser-report.html"}
+    plugin = {"pretty", "html:target/cross-browser-report.html", "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"}
 )
 public class CrossBrowserRunner extends AbstractTestNGCucumberTests {
 }

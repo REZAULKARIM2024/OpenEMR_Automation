@@ -53,7 +53,12 @@ jobs:
         run: mvn -B -Dheadless=true clean test
         continue-on-error: true
 
-      - name: Upload Cucumber report
+      - name: Generate Allure report
+        if: always()
+        run: mvn -B allure:report
+        continue-on-error: true
+
+      - name: Upload Cucumber / JaCoCo / Allure reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -62,6 +67,8 @@ jobs:
             target/cucumber-report.html
             target/cucumber.json
             target/surefire-reports/
+            target/site/jacoco/
+            target/allure-report/
 
   cross-browser:
     name: Cross-browser smoke (Chrome + Firefox)

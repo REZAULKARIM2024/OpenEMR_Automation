@@ -7,7 +7,7 @@ import io.cucumber.testng.CucumberOptions;
     features = "src/test/resources/features",
     glue = {"stepdefinitions", "hooks"},
     tags = "@smoke",
-    plugin = {"pretty", "html:target/smoke-report.html"}
+    plugin = {"pretty", "html:target/smoke-report.html", "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"}
 )
 public class SmokeRunner extends AbstractTestNGCucumberTests {
 }

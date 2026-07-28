@@ -11,8 +11,7 @@ import org.testng.annotations.DataProvider;
                 "pretty",
                 "html:target/cucumber-report.html",
                 "json:target/cucumber.json",
-                "junit:target/cucumber.xml"
-        },
+                "junit:target/cucumber.xml", "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"},
         monochrome = true
         // No tag filter: running the full 80-scenario suite by default.
         // Use the dedicated runners (SmokeRunner, RegressionRunner, SecurityRunner,
