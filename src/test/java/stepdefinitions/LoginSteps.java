@@ -1,6 +1,7 @@
 package stepdefinitions;
 
 import io.cucumber.java.en.*;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -26,6 +27,10 @@ public class LoginSteps {
     @Given("user opens login page")
     public void open_login_page() {
         driver.get(ConfigReader.getBaseUrl());
+        // Wait for the page to actually be interactive before any subsequent
+        // step tries to type into it -- fixes a "#authUser NoSuchElement"
+        // flake seen when the page hadn't finished loading yet.
+        wait.until(ExpectedConditions.visibilityOfElementLocated(loginPage.getUsernameLocator()));
     }
 
     @When("user enters username {string} and password {string}")
@@ -67,13 +72,28 @@ public class LoginSteps {
 
     @Then("user should see login error {string}")
     public void verify_login_error(String expectedMessage) {
-        boolean stillOnLoginForm = loginPage.isLoginFormDisplayed();
-        assertTrue(stillOnLoginForm, "Expected login to be rejected, but the login form is no longer displayed");
+        assertTrue(waitForLoginFormToReappear(), "Expected login to be rejected, but the login form is no longer displayed");
     }
 
     @Then("login should be rejected")
     public void login_should_be_rejected() {
-        assertTrue(loginPage.isLoginFormDisplayed(), "Expected login form to remain visible after a rejected login attempt");
+        assertTrue(waitForLoginFormToReappear(), "Expected login form to remain visible after a rejected login attempt");
+    }
+
+    /**
+     * Rejected-login checks used to call isLoginFormDisplayed() synchronously
+     * right after clickLogin(), which raced the page's post-submit reload/
+     * redirect and produced flaky failures. Polling here instead of a single
+     * instant check gives the page time to settle before we decide the
+     * login form really isn't there.
+     */
+    private boolean waitForLoginFormToReappear() {
+        try {
+            wait.until(d -> loginPage.isLoginFormDisplayed());
+            return true;
+        } catch (TimeoutException e) {
+            return false;
+        }
     }
 
     @When("user clears the username field")
@@ -133,7 +153,7 @@ public class LoginSteps {
 
     @Then("the login form should still be usable")
     public void verify_login_form_usable() {
-        assertTrue(loginPage.isLoginFormDisplayed(), "Login form is not usable after resizing/navigating");
+        assertTrue(waitForLoginFormToReappear(), "Login form is not usable after resizing/navigating");
     }
 
     // ---- Performance ----

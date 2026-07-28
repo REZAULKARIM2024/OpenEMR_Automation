@@ -46,6 +46,10 @@ public class LoginPage {
         return driver.findElement(username);
     }
 
+    public By getUsernameLocator() {
+        return username;
+    }
+
     public WebElement getPasswordField() {
         return driver.findElement(password);
     }

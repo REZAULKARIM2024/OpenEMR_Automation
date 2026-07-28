@@ -23,8 +23,12 @@ public class AdminSteps {
     public void logout() {
         driver.switchTo().defaultContent();
 
-        // Force open Admin dropdown
-        WebElement adminMenu = adminPage.getAdminMenu();
+        // Force open Admin dropdown -- waited for via the locator (not a
+        // pre-fetched WebElement) so we don't race the dashboard still
+        // rendering right after login.
+        WebElement adminMenu = wait.until(
+                ExpectedConditions.presenceOfElementLocated(adminPage.getAdminMenuLocator())
+        );
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", adminMenu);
 
         // Wait for logout button to appear anywhere in DOM
@@ -50,8 +54,7 @@ public class AdminSteps {
     @Then("the Admin menu should be visible for a logged-in user")
     public void verify_admin_menu_visible() {
         driver.switchTo().defaultContent();
-        assertTrue(driver.findElements(By.xpath(
-                "//div[@class='menuLabel px-1 dropdown-toggle oe-dropdown-toggle' and normalize-space()='Admin']"
-        )).size() > 0, "Admin menu is not visible for a logged-in user");
+        wait.until(d -> adminPage.isAdminMenuVisible());
+        assertTrue(adminPage.isAdminMenuVisible(), "Admin menu is not visible for a logged-in user");
     }
 }

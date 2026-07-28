@@ -28,8 +28,12 @@ public class PatientSteps {
     public void navigate_patient() {
         driver.switchTo().defaultContent();
 
+        // clickPatientMenu()/clickNewSearch() each wait internally on their
+        // own By locator before clicking; calling getNewSearchOption() here
+        // first (to build a WebElement for wait.until) used to defeat that
+        // wait by throwing NoSuchElementException before the retry loop
+        // ever started, so it's removed rather than kept as a redundant race.
         patientPage.clickPatientMenu();
-        wait.until(ExpectedConditions.elementToBeClickable(patientPage.getNewSearchOption()));
         patientPage.clickNewSearch();
 
         // Switch to iframe containing patient form

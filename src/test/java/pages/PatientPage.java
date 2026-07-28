@@ -3,27 +3,36 @@ package pages;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import utils.ConfigReader;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class PatientPage {
 
     private WebDriver driver;
+    private WebDriverWait wait;
 
     public PatientPage(WebDriver driver) {
         this.driver = driver;
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(ConfigReader.getDefaultTimeoutSeconds()));
     }
 
-    // Patient dropdown toggle
+    // Patient dropdown toggle. Relaxed from requiring the exact, full class
+    // string (which broke against the live demo -- see README/commit history)
+    // to matching any element whose class list *contains* "menuLabel", which
+    // tolerates class-order changes or extra classes being added/removed.
     private By patientMenu = By.xpath(
-        "//div[@class='menuLabel px-1 dropdown-toggle oe-dropdown-toggle' and normalize-space()='Patient']"
+        "//*[contains(concat(' ', normalize-space(@class), ' '), ' menuLabel ') and normalize-space()='Patient']"
     );
 
     // New/Search option
     private By newSearchOption = By.xpath(
-        "//div[@class='menuLabel px-1' and normalize-space()='New/Search']"
+        "//*[contains(concat(' ', normalize-space(@class), ' '), ' menuLabel ') and normalize-space()='New/Search']"
     );
 
     // Patient form fields (inside iframe)
@@ -46,11 +55,11 @@ public class PatientPage {
     }
 
     public void clickPatientMenu() {
-        getPatientMenu().click();
+        wait.until(ExpectedConditions.elementToBeClickable(patientMenu)).click();
     }
 
     public void clickNewSearch() {
-        getNewSearchOption().click();
+        wait.until(ExpectedConditions.elementToBeClickable(newSearchOption)).click();
     }
 
     public WebElement getFirstNameField() {
