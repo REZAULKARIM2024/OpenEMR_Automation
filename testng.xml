@@ -1,6 +1,10 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
 <suite name="OpenEMR Test Suite">
 
+    <listeners>
+        <listener class-name="utils.RetryTransformer"/>
+    </listeners>
+
     <test name="Unit Tests">
         <classes>
             <class name="unit.ConfigReaderTest"/>

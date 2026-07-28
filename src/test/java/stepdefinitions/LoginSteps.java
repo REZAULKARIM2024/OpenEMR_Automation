@@ -35,6 +35,12 @@ public class LoginSteps {
 
     @When("user enters username {string} and password {string}")
     public void enter_credentials(String uname, String pwd) {
+        // Scenarios that retry a login (e.g. repeated failed attempts) call
+        // this step again right after a failed submit, which triggers a full
+        // page reload. Without waiting here, this step can race that reload
+        // and hit a NoSuchElementException on a page that's mid-refresh.
+        wait.until(ExpectedConditions.visibilityOfElementLocated(loginPage.getUsernameLocator()));
+
         if (uname != null && !uname.isEmpty()) {
             loginPage.enterUsername(uname);
         }
