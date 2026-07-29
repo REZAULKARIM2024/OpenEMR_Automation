@@ -17,24 +17,26 @@ public class InsurancePage {
     }
 
     public void addInsurance(String provider, String policy) {
-        // Root cause (confirmed against the real OpenEMR source on GitHub --
-        // InsuranceViewCard.php + templates/patient/card/{insurance,card_base}.html.twig --
-        // not a guess): there is no link with visible text "Insurance" anywhere
-        // on this page. The card's "Insurance" heading is just a collapse/expand
-        // toggle (href="#"); the actual add/edit control is an ICON-ONLY link
-        // (<i class="fa fa-pencil-alt">, no text) whose href points at
-        // insurance_edit.php. That card is part of the patient's demographics
-        // page, which is rendered inside the "pat" content frame, not the
-        // outer frameset -- so the old code was searching for nonexistent
-        // link text, in the wrong frame, before ever switching into it. The
-        // DiagnosticsHelper dump from the last real run (still showing the
-        // outer dashboard's top nav, not the patient page) is exactly what
-        // you'd expect from that bug.
+        // Root cause, now confirmed two ways: (1) a live screenshot of the
+        // demo showing a vertical category menu -- Contact, Choices,
+        // Employer, Stats, Misc, Related, Insurance -- on the patient's
+        // "Edit Current Patient" screen, and (2) the real OpenEMR source for
+        // that exact screen (interface/patient_file/summary/demographics_full.php),
+        // which renders that menu as <ul class="tabNav"> via
+        // display_layout_tabs('DEM', ...) -- i.e. real tab links whose
+        // visible text is literally the category name, "Insurance" included.
+        // (An earlier fix here assumed the read-only summary "card" page --
+        // demographics.php / InsuranceViewCard -- where Insurance has no
+        // visible link text at all; that was the wrong template for this
+        // flow.) That tab menu only exists once the patient's own page is
+        // loaded inside the "pat" content frame, not the outer frameset --
+        // matching the original bug where the old code searched for this
+        // text in the wrong frame and never found it.
         driver.switchTo().frame("pat");
         try {
             try {
                 wait.until(ExpectedConditions.elementToBeClickable(
-                        By.xpath("//a[contains(@href,'insurance_edit.php')]"))).click();
+                        By.xpath("//a[contains(normalize-space(.),'Insurance')]"))).click();
             } catch (TimeoutException e) {
                 throw new TimeoutException(e.getMessage() + DiagnosticsHelper.describePage(driver), e);
             }
