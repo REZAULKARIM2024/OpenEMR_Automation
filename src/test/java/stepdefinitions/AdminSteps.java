@@ -42,6 +42,26 @@ public class AdminSteps {
         ((JavascriptExecutor) driver).executeScript("arguments[0].click();", logoutBtn);
 
         driver.switchTo().defaultContent();
+
+        // Wait for the logout to actually complete (server-side session
+        // invalidation + redirect to the login page) before returning.
+        // Without this, callers that immediately navigate elsewhere (e.g.
+        // "user navigates directly to the patient dashboard URL without
+        // logging in") can race the still-valid session: their driver.get()
+        // fires before the server has invalidated it, so the dashboard
+        // loads instead of redirecting to login, and the next assertion
+        // times out waiting for a URL change that already came and went.
+        // This is exactly the shape of the "Session ends after logout and
+        // protected pages redirect to login" failure seen in CI -- the
+        // sibling scenario that explicitly waits here already passes.
+        try {
+            wait.until(d -> d.findElements(By.id("authUser")).size() > 0
+                    || d.getCurrentUrl().contains("login"));
+        } catch (TimeoutException e) {
+            throw new TimeoutException(
+                    "Logout did not complete (no login page reached) -- " + e.getMessage()
+                            + utils.DiagnosticsHelper.describePage(driver), e);
+        }
     }
 
     @Then("user should be redirected to the login page after logout")

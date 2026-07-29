@@ -207,7 +207,11 @@ public class LoginSteps {
 
     @Then("user should be redirected to the login page")
     public void verify_redirected_to_login() {
-        wait.until(d -> loginPage.isLoginFormDisplayed() || d.getCurrentUrl().contains("login"));
+        try {
+            wait.until(d -> loginPage.isLoginFormDisplayed() || d.getCurrentUrl().contains("login"));
+        } catch (TimeoutException e) {
+            throw new TimeoutException(e.getMessage() + utils.DiagnosticsHelper.describePage(driver), e);
+        }
         assertTrue(loginPage.isLoginFormDisplayed() || driver.getCurrentUrl().contains("login"),
                 "Unauthenticated access was not redirected to the login page");
     }

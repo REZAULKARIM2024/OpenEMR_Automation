@@ -2,6 +2,7 @@ package pages;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.*;
+import utils.DiagnosticsHelper;
 
 import java.time.Duration;
 
@@ -17,7 +18,11 @@ public class InsurancePage {
 
     public void addInsurance(String provider, String policy) {
 
-        wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(text(),'Insurance')]"))).click();
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//a[contains(text(),'Insurance')]"))).click();
+        } catch (TimeoutException e) {
+            throw new TimeoutException(e.getMessage() + DiagnosticsHelper.describePage(driver), e);
+        }
 
         driver.switchTo().frame("pat");
 
