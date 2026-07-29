@@ -70,8 +70,25 @@ public class LoginSteps {
 
     @Then("user should see dashboard page")
     public void verify_dashboard() {
-        wait.until(ExpectedConditions.titleContains("OpenEMR"));
-        assertTrue(driver.getTitle().contains("OpenEMR"), "Dashboard title did not contain 'OpenEMR'");
+        // Previously checked driver.getTitle().contains("OpenEMR"), which is
+        // a false-positive check: the login page's own title is literally
+        // "OpenEMR Login", so this passed whether login succeeded OR was
+        // rejected (e.g. "Invalid username or password" -- account lockout
+        // from repeated automated attempts against the shared public demo).
+        // That's why failures were surfacing two steps later, at the Patient
+        // menu, with a confusing "menu not clickable" symptom instead of a
+        // clear "login was rejected" one. Checking that the login form is
+        // gone and the URL no longer points at login.php is an actual
+        // logged-in signal, not just a substring that both pages share.
+        try {
+            wait.until(d -> !loginPage.isLoginFormDisplayed() && !d.getCurrentUrl().contains("login"));
+        } catch (TimeoutException e) {
+            throw new TimeoutException(
+                    "Login did not reach the dashboard (still on the login page -- likely rejected) -- "
+                            + e.getMessage() + utils.DiagnosticsHelper.describePage(driver), e);
+        }
+        assertTrue(!loginPage.isLoginFormDisplayed() && !driver.getCurrentUrl().contains("login"),
+                "Expected to reach the dashboard after login, but the login form is still displayed");
     }
 
     // ---- Negative / validation ----
