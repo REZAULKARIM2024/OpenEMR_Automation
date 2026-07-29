@@ -26,7 +26,10 @@ public final class TestDataGenerator {
             "Rahman", "Garcia", "Kim", "Ivanov", "Ahmed", "Rossi", "Tanaka"
     };
 
-    private static final String[] GENDERS = {"Male", "Female", "Unspecified"};
+    // "Unassigned" -- confirmed via real inspected HTML from the live demo's
+    // Sex dropdown (id="form_sex_identified"); this OpenEMR version has no
+    // "Unspecified" option at all.
+    private static final String[] GENDERS = {"Male", "Female", "Unassigned"};
 
     private static final Random RANDOM = new Random();
     private static final DateTimeFormatter DOB_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");

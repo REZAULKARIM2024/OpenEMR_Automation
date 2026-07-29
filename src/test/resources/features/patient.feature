@@ -82,11 +82,11 @@ Feature: Patient Management
       | gender         |
       | Male           |
       | Female         |
-      | Unspecified    |
+      | Unassigned     |
 
   @forms
   Scenario: Gender dropdown exposes the expected options
-    Then the gender dropdown should contain "Male", "Female" and "Unspecified"
+    Then the gender dropdown should contain "Male", "Female" and "Unassigned"
 
   @forms
   Scenario: Clearing the patient form empties all fields

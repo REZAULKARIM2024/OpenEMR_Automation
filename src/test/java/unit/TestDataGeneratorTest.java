@@ -26,7 +26,7 @@ public class TestDataGeneratorTest {
     @Test
     public void randomGenderIsOneOfTheSupportedValues() {
         String gender = TestDataGenerator.randomGender();
-        assertTrue(gender.equals("Male") || gender.equals("Female") || gender.equals("Unspecified"));
+        assertTrue(gender.equals("Male") || gender.equals("Female") || gender.equals("Unassigned"));
     }
 
     @Test

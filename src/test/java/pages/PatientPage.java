@@ -41,7 +41,11 @@ public class PatientPage {
     private By firstNameField = By.id("form_fname");
     private By lastNameField = By.id("form_lname");
     private By dobField = By.id("form_DOB");
-    private By genderDropdown = By.id("form_sex");
+    // Real id/name confirmed via inspected HTML from the live demo: this
+    // version of OpenEMR renders the Sex field as "form_sex_identified",
+    // not "form_sex". The old id never matched, which is why every
+    // gender-related scenario failed at this element with NoSuchElementException.
+    private By genderDropdown = By.id("form_sex_identified");
     private By searchNameField = By.name("form_name");
     private By searchButton = By.xpath("//button[@id='btn-search' or contains(text(),'Search')]");
     private By resultsTable = By.xpath("//table[contains(@id,'patient') or contains(@class,'table')]");
