@@ -1,12 +1,14 @@
 package pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import utils.ConfigReader;
+import utils.DiagnosticsHelper;
 
 import java.time.Duration;
 import java.util.List;
@@ -55,11 +57,19 @@ public class PatientPage {
     }
 
     public void clickPatientMenu() {
-        wait.until(ExpectedConditions.elementToBeClickable(patientMenu)).click();
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(patientMenu)).click();
+        } catch (TimeoutException e) {
+            throw new TimeoutException(e.getMessage() + DiagnosticsHelper.describePage(driver), e);
+        }
     }
 
     public void clickNewSearch() {
-        wait.until(ExpectedConditions.elementToBeClickable(newSearchOption)).click();
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(newSearchOption)).click();
+        } catch (TimeoutException e) {
+            throw new TimeoutException(e.getMessage() + DiagnosticsHelper.describePage(driver), e);
+        }
     }
 
     public WebElement getFirstNameField() {

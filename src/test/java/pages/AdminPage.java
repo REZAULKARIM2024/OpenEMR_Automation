@@ -1,11 +1,13 @@
 package pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import utils.ConfigReader;
+import utils.DiagnosticsHelper;
 
 import java.time.Duration;
 
@@ -48,7 +50,11 @@ public class AdminPage {
     }
 
     public void clickAdminMenu() {
-        wait.until(ExpectedConditions.elementToBeClickable(adminMenu)).click();
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(adminMenu)).click();
+        } catch (TimeoutException e) {
+            throw new TimeoutException(e.getMessage() + DiagnosticsHelper.describePage(driver), e);
+        }
     }
 
     public void clickLogout() {

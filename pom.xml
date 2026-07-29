@@ -23,6 +23,16 @@
         <wdm.version>5.8.0</wdm.version>
         <allure.version>2.24.0</allure.version>
         <jacoco.version>0.8.11</jacoco.version>
+
+        <!-- Default TestNG suite; override on the command line with
+             -DsuiteXmlFile=testng-smoke.xml (etc). Before this property
+             existed, <suiteXmlFile> below was a hardcoded literal, so every
+             -DsuiteXmlFile=... passed on the command line (including in
+             ci.yml's smoke and cross-browser jobs) was silently ignored and
+             the full testng.xml ran regardless -- this is why the "smoke"
+             job was taking ~13 minutes instead of running just the
+             @smoke-tagged subset. -->
+        <suiteXmlFile>testng.xml</suiteXmlFile>
     </properties>
 
     <dependencies>
@@ -129,7 +139,7 @@
                 <configuration>
                     <argLine>${argLine}</argLine>
                     <suiteXmlFiles>
-                        <suiteXmlFile>testng.xml</suiteXmlFile>
+                        <suiteXmlFile>${suiteXmlFile}</suiteXmlFile>
                     </suiteXmlFiles>
                 </configuration>
             </plugin>

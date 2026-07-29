@@ -1,10 +1,12 @@
 package pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import utils.ConfigReader;
+import utils.DiagnosticsHelper;
 
 import java.time.Duration;
 
@@ -46,13 +48,20 @@ public class DashboardPage {
         try {
             wait.until(ExpectedConditions.presenceOfElementLocated(menuLabel(moduleName)));
         } catch (Exception e) {
-            // fall through to the definitive check below
+            // fall through to the definitive check below; if it's also
+            // false, the caller's assertion message alone won't say what
+            // page we were actually on, so log it here for visibility.
+            System.err.println("[DIAG] '" + moduleName + "' menu not present." + DiagnosticsHelper.describePage(driver));
         }
         return driver.findElements(menuLabel(moduleName)).size() > 0;
     }
 
     public void openModule(String moduleName) {
-        wait.until(ExpectedConditions.elementToBeClickable(menuLabel(moduleName))).click();
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(menuLabel(moduleName))).click();
+        } catch (TimeoutException e) {
+            throw new TimeoutException(e.getMessage() + DiagnosticsHelper.describePage(driver), e);
+        }
     }
 
     public boolean isSubMenuExpanded() {
