@@ -46,8 +46,18 @@ public class PatientPage {
     // not "form_sex". The old id never matched, which is why every
     // gender-related scenario failed at this element with NoSuchElementException.
     private By genderDropdown = By.id("form_sex_identified");
-    private By searchNameField = By.name("form_name");
-    private By searchButton = By.xpath("//button[@id='btn-search' or contains(text(),'Search')]");
+    // Real HTML from the live demo's "Search or Add Patient" page (the same
+    // page used for both creating and searching) confirms there is no
+    // unified "form_name" field at all -- the name is split into separate
+    // First/Middle/Last Name boxes, same as the patient-creation form. The
+    // First Name box is literally the same field, id="form_fname", already
+    // used above for entering a new patient's first name. This is why
+    // searching always threw NoSuchElementException: the field never
+    // existed under that name.
+    private By searchNameField = By.id("form_fname");
+    // Real id confirmed via inspected HTML: id="search" (kept the
+    // text-based fallback too, in case a future page revision changes it).
+    private By searchButton = By.xpath("//button[@id='search' or @id='btn-search' or contains(text(),'Search')]");
     private By resultsTable = By.xpath("//table[contains(@id,'patient') or contains(@class,'table')]");
 
     private By saveButton = By.id("create");
