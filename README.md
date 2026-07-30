@@ -234,6 +234,22 @@ Underlying functional coverage: authentication (valid/invalid login, malicious p
 
 **Special considerations:** OpenEMR is a healthcare application, so scenarios simulate realistic but non-sensitive workflows. Only demo/test data is used — never real patient data.
 
+### Latest Verified Smoke Run
+
+**2026-07-30** — full smoke suite (`testng-smoke.xml`, 8 scenarios) run locally against the live demo:
+
+```
+Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+This includes the `@e2e @smoke` end-to-end patient onboarding scenario (login → add patient → add insurance → logout), which exercises `pages/InsurancePage.java`. That page object's locators were corrected using real inspected DOM from the live demo (commits `f30452a`, `61b8ae1`):
+
+* The Insurance section toggle is a Bootstrap collapse `<button data-target="#div_ins">`, not a link or tab.
+* There is no "Add New" button — expanding the panel reveals the Primary/Secondary/Tertiary insurance forms directly.
+* Provider is a `<select name="i1provider">` (selected by visible text); Policy Number is `<input name="i1policy_number">`.
+* The whole form (patient demographics + insurance) is submitted via the `id="create"` ("Create New Patient") button — there's no separate insurance-only save control.
+
 ---
 
 ## Test Architecture: Tagging & Parallel Execution
