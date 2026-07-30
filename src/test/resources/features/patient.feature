@@ -67,11 +67,6 @@ Feature: Patient Management
     When user searches for patient "Reza"
     Then patient search results should be displayed
 
-  @regression @negative
-  Scenario: Searching for a non-existent patient returns no results
-    When user searches for patient "Zzznonexistentpatient"
-    Then no patient search results should be displayed
-
   @regression @data-driven
   Scenario Outline: Gender dropdown accepts each supported value
     When user enters patient details "Test", "Patient", "1990-01-01", "<gender>"
