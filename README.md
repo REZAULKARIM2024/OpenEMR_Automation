@@ -24,6 +24,7 @@ A robust and scalable UI automation framework built for the OpenEMR demo applica
 * [Test Architecture: Tagging & Parallel Execution](#test-architecture-tagging--parallel-execution)
 * [Code Coverage (JaCoCo)](#code-coverage-jacoco)
 * [Test Reporting (Allure)](#test-reporting-allure)
+  * [Cucumber report](#cucumber-report-targetcucumber-reporthtml)
 * [BDD & E2E Testing (Cucumber, Selenium)](#bdd--e2e-testing-cucumber-selenium)
 * [REST API](#rest-api)
 * [Web Admin Dashboard](#web-admin-dashboard)
@@ -52,7 +53,7 @@ No live screenshots are checked into this README — they weren't captured again
 * `Cucumber.pdf` and `OpenEMR Cucumber Test Report.pdf` in the repo root — exported HTML-to-PDF snapshots of a prior Cucumber run.
 * Automatic failure screenshots: `Hooks.java` attaches a PNG to the Cucumber report for any scenario that fails (`scenario.attach(..., "image/png", "Failure Screenshot")`), visible in `target/cucumber-report.html` after a run.
 
-To generate fresh screenshots for this section, run the suite locally (`mvn clean test`) and open `target/cucumber-report.html` or the Allure report (see [Test Reporting (Allure)](#test-reporting-allure)) — both render inline images for any failures, and you can crop a passing run's dashboard view from there.
+To generate fresh screenshots for this section, run the suite locally (`mvn clean test`) and open `target/cucumber-report.html` or the Allure report (see [Test Reporting (Allure)](#test-reporting-allure)) — both render inline images for any failures, and you can crop a passing run's dashboard view from there. See [Cucumber report](#cucumber-report-targetcucumber-reporthtml) for the exact scenario/step breakdown from the latest verified 79/79 green run, and [Latest Verified Runs](#testing) for the corresponding `mvn clean test` console output.
 
 ---
 
@@ -296,6 +297,27 @@ mvn test
 mvn allure:report   # writes target/allure-report
 mvn allure:serve    # builds and opens the report in a browser in one step
 ```
+
+Allure adds per-scenario timelines, tag-based filtering (`@smoke`, `@regression`, `@security`, etc. — see [Testing](#testing)), and history-across-runs trending on top of the raw Cucumber output — useful for triaging the full 79-scenario regression run without re-running it locally.
+
+### Cucumber report (`target/cucumber-report.html`)
+
+Every `mvn test` / `mvn clean test` run also produces a self-contained Cucumber HTML report at `target/cucumber-report.html` (plus machine-readable `target/cucumber.json` / `target/cucumber.xml`), independent of Allure. It's the fastest way to check a single run: open it directly in a browser, no extra Maven goal needed.
+
+From the **2026-07-30** verified full run (`mvn clean test`, 91 TestNG methods including unit tests), the underlying Cucumber JSON breaks down as:
+
+| Feature file | Scenarios | Steps | Failed |
+|---|---|---|---|
+| `login.feature` | 30 | — | 0 |
+| `patient.feature` | 22 | — | 0 |
+| `navigation.feature` | 13 | — | 0 |
+| `browser_behavior.feature` | 7 | — | 0 |
+| `admin.feature` | 4 | — | 0 |
+| `api.feature` | 2 | — | 0 |
+| `openemr.feature` | 1 | — | 0 |
+| **Total** | **79** | **230** | **0** |
+
+Both `target/cucumber-report.html` and `target/allure-report/` are build output (gitignored — see `.gitignore`), not committed to the repo, so they always reflect the run that produced them rather than going stale. The `Cucumber.pdf` / `OpenEMR Cucumber Test Report.pdf` files in the repo root (see [Screenshots](#screenshots)) are manual PDF exports of a past `cucumber-report.html` — regenerate them the same way (open the fresh HTML report, Print → Save as PDF) after a verified green run if you want an updated static snapshot checked in.
 
 Allure adds per-scenario timelines, tag-based filtering, and history-across-runs trending on top of the default Cucumber HTML report — useful for triaging the full 79-scenario regression run.
 
