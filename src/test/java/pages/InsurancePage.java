@@ -45,18 +45,36 @@ public class InsurancePage {
                 throw new TimeoutException(e.getMessage() + DiagnosticsHelper.describePage(driver), e);
             }
 
-            // TODO: unconfirmed by real DOM evidence yet -- once #div_ins
-            // expands, we don't yet know whether the add/edit control inside
-            // it is a text button labeled "Add New" or an icon-only link
-            // (per InsuranceViewCard.php's btnLink to insurance_edit.php).
-            // Keeping this locator until real HTML from inside the expanded
-            // panel is available.
-            wait.until(ExpectedConditions.elementToBeClickable(By.xpath("//button[contains(text(),'Add New')]"))).click();
+            // Corrected based on real inspected HTML from the live demo:
+            // there is NO "Add New" button. Expanding #div_ins reveals the
+            // Primary/Secondary/Tertiary insurance forms directly, inline.
+            // Primary provider is a <select name="i1provider"> populated
+            // with provider names (e.g. "Aetna"), and Policy Number is
+            //   <input type="entry" class="form-control" size="16"
+            //          name="i1policy_number" value="" onkeyup="policykeyup(this)">
+            // The earlier "Add New" click and the "provider"/"policy_number"
+            // field names were both guesses that didn't match this page.
+            WebElement providerSelectEl = wait.until(
+                    ExpectedConditions.visibilityOfElementLocated(By.name("i1provider")));
+            new Select(providerSelectEl).selectByVisibleText(provider);
 
-            wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("provider"))).sendKeys(provider);
-            driver.findElement(By.name("policy_number")).sendKeys(policy);
+            WebElement policyField = wait.until(
+                    ExpectedConditions.visibilityOfElementLocated(By.name("i1policy_number")));
+            policyField.clear();
+            policyField.sendKeys(policy);
 
-            driver.findElement(By.id("form_save")).click();
+            // Corrected based on real inspected HTML from the live demo:
+            // there is no separate "Save" button for the insurance section.
+            // The Primary/Secondary/Tertiary insurance fields are embedded
+            // directly inside the same "New Patient" creation form (Title,
+            // Name, DOB, ... Insurance, ...), and the whole form -- patient
+            // demographics AND insurance together -- is submitted with:
+            //   <button type="button" class="btn btn-primary btn-save"
+            //           name="create" id="create" value="Create New Patient">
+            //     Create New Patient
+            //   </button>
+            // "form_save" (the previous guess) does not exist on this page.
+            driver.findElement(By.id("create")).click();
         } finally {
             driver.switchTo().defaultContent();
         }
