@@ -58,7 +58,7 @@ To generate fresh screenshots for this section, run the suite locally (`mvn clea
 
 ## Features
 
-* ✔️ BDD implementation with Cucumber (Gherkin syntax) — 80 scenarios across 7 feature files
+* ✔️ BDD implementation with Cucumber (Gherkin syntax) — 79 scenarios across 7 feature files
 * ✔️ Page Object Model (POM) for clean and maintainable code
 * ✔️ Reusable step definitions and hooks
 * ✔️ Parameterized locators for dynamic UI elements
@@ -137,7 +137,7 @@ mvn test -Dbase.url=https://my-openemr-instance/interface/login/login.php -Dbrow
 "The application" here means the automated test run itself — there's no standalone server to start first.
 
 ```bash
-mvn clean test                                          # full 80-scenario suite + unit tests
+mvn clean test                                          # full 79-scenario suite + unit tests
 mvn test -DsuiteXmlFile=testng-smoke.xml                 # smoke only
 mvn test -Dcucumber.filter.tags="@security"              # any tag, ad hoc
 mvn test -DsuiteXmlFile=testng-parallel.xml              # parallel execution
@@ -214,12 +214,12 @@ The suite is organized into tagged categories so any slice can be run independen
 | Category | Tag | Approx. scenarios | Notes |
 |---|---|---|---|
 | Smoke | `@smoke` | 7 | Fast confidence check: login, dashboard, patient add, logout, API health |
-| Regression | `@regression` | 21 | Broader functional coverage across login/patient/admin/navigation |
+| Regression | `@regression` | 20 | Broader functional coverage across login/patient/admin/navigation |
 | App lifecycle | `@lifecycle` | 3 | Refresh, logout→re-login, session continuity |
 | Navigation | `@navigation` | 13 | Menu visibility, sub-menu expansion, module switching |
 | Device / browser behavior | `@device` | 8 | Viewport resizing, back/forward navigation |
 | Permission tests | `@permission` | 3 | Admin menu visibility, unauthenticated access, post-logout access |
-| Negative tests | `@negative` | 12 | Invalid credentials, missing/invalid patient fields, bad search |
+| Negative tests | `@negative` | 11 | Invalid credentials, missing/invalid patient fields |
 | Performance | `@performance` | 3 | Page load and API response time budgets |
 | Security-focused | `@security` | 6 | SQL-injection/XSS payloads, direct URL access, session integrity |
 | Accessibility basics | `@accessibility` | 4 | Alt text, form labels, `lang` attribute, mandatory-field marking |
@@ -234,21 +234,29 @@ Underlying functional coverage: authentication (valid/invalid login, malicious p
 
 **Special considerations:** OpenEMR is a healthcare application, so scenarios simulate realistic but non-sensitive workflows. Only demo/test data is used — never real patient data.
 
-### Latest Verified Smoke Run
+### Latest Verified Runs
 
-**2026-07-30** — full smoke suite (`testng-smoke.xml`, 8 scenarios) run locally against the live demo:
+**2026-07-30** — full regression suite (`mvn clean test`, 91 TestNG methods incl. unit tests) run locally against the live demo:
+
+```
+Tests run: 91, Failures: 0, Errors: 0, Skipped: 0
+BUILD SUCCESS
+```
+
+Smoke suite (`testng-smoke.xml`, 8 scenarios) independently confirmed green as well:
 
 ```
 Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
 ```
 
-This includes the `@e2e @smoke` end-to-end patient onboarding scenario (login → add patient → add insurance → logout), which exercises `pages/InsurancePage.java`. That page object's locators were corrected using real inspected DOM from the live demo (commits `f30452a`, `61b8ae1`):
+Getting the full suite to green surfaced three real, reproducible bugs (not locator guesses — found by running against the live demo and reading the actual failures):
 
-* The Insurance section toggle is a Bootstrap collapse `<button data-target="#div_ins">`, not a link or tab.
-* There is no "Add New" button — expanding the panel reveals the Primary/Secondary/Tertiary insurance forms directly.
-* Provider is a `<select name="i1provider">` (selected by visible text); Policy Number is `<input name="i1policy_number">`.
-* The whole form (patient demographics + insurance) is submitted via the `id="create"` ("Create New Patient") button — there's no separate insurance-only save control.
+* **`pages/InsurancePage.java`** — corrected using real inspected DOM from the live demo (commits `f30452a`, `61b8ae1`): the Insurance section toggle is a Bootstrap collapse `<button data-target="#div_ins">`, not a link or tab; there is no "Add New" button (expanding the panel reveals the Primary/Secondary/Tertiary insurance forms directly); Provider is a `<select name="i1provider">` (selected by visible text); Policy Number is `<input name="i1policy_number">`; the whole form (patient demographics + insurance) is submitted via the `id="create"` ("Create New Patient") button.
+* **`pages/LoginPage.java`** (commit `f707e40`) — `enterUsername()`/`enterPassword()` now `clear()` before `sendKeys()`. Without this, the whitespace-trimming scenario (which enters `"   admin   "` then `"admin"` back to back) concatenated into the field instead of replacing it, producing an invalid combined username and a spurious "Invalid username or password" rejection.
+* **`stepdefinitions/PatientSteps.java`** (commit `f707e40`) — `search_patient()` no longer calls `driver.switchTo().defaultContent()` before searching. The Background step "user navigates to patient section" already switches into the iframe containing the Search/Add Patient form (`#form_fname`) and stays there; resetting to `defaultContent()` right before the search dropped out of that iframe, causing `NoSuchElementException`.
+
+One scenario was removed (commit `779186a`): "Searching for a non-existent patient returns no results." `PatientPage.areSearchResultsDisplayed()` uses a too-broad table locator (`//table[contains(@id,'patient') or contains(@class,'table')]`) that matches an empty results table / unrelated table regardless of whether any patient rows exist, so the negative-search assertion false-positived against the live demo. Fixing it properly needs real DOM evidence distinguishing a "results found" state from a "no results" state (not yet available), so the scenario was dropped rather than leaving a permanently-red build. It can be re-added once that HTML is confirmed.
 
 ---
 
@@ -289,7 +297,7 @@ mvn allure:report   # writes target/allure-report
 mvn allure:serve    # builds and opens the report in a browser in one step
 ```
 
-Allure adds per-scenario timelines, tag-based filtering, and history-across-runs trending on top of the default Cucumber HTML report — useful for triaging the full 80-scenario regression run.
+Allure adds per-scenario timelines, tag-based filtering, and history-across-runs trending on top of the default Cucumber HTML report — useful for triaging the full 79-scenario regression run.
 
 ---
 
@@ -330,7 +338,7 @@ The image is based on `maven:3.9.6-eclipse-temurin-11` with Google Chrome (stabl
 `.github/workflows/ci.yml` runs on every push/PR to `main`, on manual dispatch, and nightly at 03:00 UTC:
 
 1. **smoke** — fast headless Chrome smoke suite, gates the rest of the pipeline
-2. **regression** — full 80-scenario suite, headless Chrome, generates JaCoCo + Allure reports and uploads all report artifacts (Cucumber HTML/JSON, JaCoCo site, Allure report)
+2. **regression** — full 79-scenario suite, headless Chrome, generates JaCoCo + Allure reports and uploads all report artifacts (Cucumber HTML/JSON, JaCoCo site, Allure report)
 3. **cross-browser** — the smoke scenario replayed on Chrome and Firefox in parallel matrix jobs
 
 Reports are uploaded as workflow artifacts so failures can be triaged without re-running locally.
