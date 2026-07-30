@@ -74,7 +74,24 @@ public class InsurancePage {
             //     Create New Patient
             //   </button>
             // "form_save" (the previous guess) does not exist on this page.
-            driver.findElement(By.id("create")).click();
+            //
+            // Reproduced failure: a bare findElement().click() here throws
+            // ElementClickInterceptedException -- "Element ... is not
+            // clickable at point (404, 495). Other element would receive
+            // the click: <select name=\"form_i3subscriber_state\"...>".
+            // The full Primary/Secondary/Tertiary insurance form is very
+            // tall, so the button isn't scrolled into view and ends up
+            // behind another field at its cached click coordinates.
+            // Scrolling it into view first, then falling back to a JS
+            // click if the native click is still intercepted, is the
+            // standard fix for this exact exception.
+            WebElement createBtn = wait.until(ExpectedConditions.presenceOfElementLocated(By.id("create")));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block: 'center'});", createBtn);
+            try {
+                wait.until(ExpectedConditions.elementToBeClickable(By.id("create"))).click();
+            } catch (ElementClickInterceptedException e) {
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", createBtn);
+            }
         } finally {
             driver.switchTo().defaultContent();
         }
