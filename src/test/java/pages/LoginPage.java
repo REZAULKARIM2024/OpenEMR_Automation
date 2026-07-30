@@ -27,11 +27,20 @@ public class LoginPage {
     }
 
     public void enterUsername(String uname) {
-        driver.findElement(username).sendKeys(uname);
+        // Clear first: reproduced test failure showed that without this,
+        // back-to-back username-entry steps (e.g. the whitespace-trimming
+        // scenario, which enters "   admin   " then "admin") concatenate
+        // into the field instead of replacing its contents, producing an
+        // invalid combined username and a spurious login rejection.
+        WebElement el = driver.findElement(username);
+        el.clear();
+        el.sendKeys(uname);
     }
 
     public void enterPassword(String pwd) {
-        driver.findElement(password).sendKeys(pwd);
+        WebElement el = driver.findElement(password);
+        el.clear();
+        el.sendKeys(pwd);
     }
 
     public void clearUsername() {

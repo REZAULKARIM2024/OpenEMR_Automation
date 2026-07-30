@@ -106,7 +106,16 @@ public class PatientSteps {
 
     @And("user searches for patient {string}")
     public void search_patient(String name) {
-        driver.switchTo().defaultContent();
+        // Do NOT switchTo().defaultContent() here. The Background step
+        // "user navigates to patient section" (navigate_patient()) already
+        // switched into the iframe containing the Search/Add Patient form
+        // and stays there -- it's the same #form_fname field used for
+        // entering a new patient's first name. Resetting to defaultContent
+        // right before searching drops out of that iframe, so
+        // #form_fname is no longer present in the top-level document,
+        // causing a NoSuchElementException. Confirmed via reproduced test
+        // failures: both patient-search scenarios failed identically until
+        // this reset was removed.
         patientPage.searchPatientByName(name);
     }
 
