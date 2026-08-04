@@ -24,6 +24,14 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
+      - name: Pre-flight - verify shared demo site is accepting logins
+        # Single login attempt (~20-30s) against demo.openemr.io before
+        # committing to the full ~5min smoke suite. Fails fast with a
+        # specific "demo is down/reset, not our code" message instead of
+        # letting all login-dependent scenarios fail one by one further
+        # down the pipeline. See utils/PreflightHealthCheck.java.
+        run: mvn -B -Dheadless=true test -DsuiteXmlFile=testng-preflight.xml
+
       - name: Run smoke tests (headless Chrome)
         run: mvn -B -Dheadless=true test -DsuiteXmlFile=testng-smoke.xml
         continue-on-error: false
