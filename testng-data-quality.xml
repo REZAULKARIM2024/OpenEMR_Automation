@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="OpenEMR Data Quality Suite">
+    <test name="Data/ETL Quality Checks">
+        <classes>
+            <class name="etl.DataQualityChecks"/>
+        </classes>
+    </test>
+</suite>

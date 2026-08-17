@@ -114,6 +114,17 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- MySQL JDBC driver: direct-database data/ETL quality checks
+             (etl.DataQualityChecks) against OpenEMR's MySQL schema. Only
+             exercised against a self-hosted instance -- the shared public
+             demo doesn't expose DB access. See docs/qa/Data-ETL-Testing.md. -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>8.3.0</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="OpenEMR Authenticated API Suite">
+    <test name="Authenticated Standard API Tests">
+        <classes>
+            <class name="runners.AuthenticatedApiRunner"/>
+        </classes>
+    </test>
+</suite>

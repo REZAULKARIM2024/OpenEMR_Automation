@@ -27,6 +27,8 @@ A robust and scalable UI automation framework built for the OpenEMR demo applica
   * [Cucumber report](#cucumber-report-targetcucumber-reporthtml)
 * [BDD & E2E Testing (Cucumber, Selenium)](#bdd--e2e-testing-cucumber-selenium)
 * [REST API](#rest-api)
+* [Data & ETL Testing](#data--etl-testing)
+* [Test Management & QA Documentation](#test-management--qa-documentation)
 * [Web Admin Dashboard](#web-admin-dashboard)
 * [Running with Docker](#running-with-docker)
 * [CI/CD Pipeline](#cicd-pipeline)
@@ -59,7 +61,7 @@ To generate fresh screenshots for this section, run the suite locally (`mvn clea
 
 ## Features
 
-* ✔️ BDD implementation with Cucumber (Gherkin syntax) — 79 scenarios across 7 feature files
+* ✔️ BDD implementation with Cucumber (Gherkin syntax) — 47 written scenarios (~90 with `Examples` expansion) across 8 feature files
 * ✔️ Page Object Model (POM) for clean and maintainable code
 * ✔️ Reusable step definitions and hooks
 * ✔️ Parameterized locators for dynamic UI elements
@@ -67,9 +69,11 @@ To generate fresh screenshots for this section, run the suite locally (`mvn clea
 * ✔️ Cross-browser support (Chrome / Firefox) via `-Dbrowser`
 * ✔️ Headless execution via `-Dheadless=true` (auto-enabled under CI)
 * ✔️ Parallel scenario execution via TestNG's DataProvider
-* ✔️ REST Assured API-level smoke checks
+* ✔️ REST Assured API checks: transport smoke + real OAuth2-authenticated Standard REST API coverage (registration, tokens, CRUD, error handling)
+* ✔️ Opt-in JDBC data-quality checks (null/duplicate/referential-integrity/reconciliation) against a self-hosted instance
+* ✔️ Jira/Zephyr-style test management docs (`docs/qa/`) — test plan, test case register, traceability matrix, defect log
 * ✔️ JaCoCo code coverage and Allure HTML reporting
-* ✔️ GitHub Actions CI/CD: smoke → full regression → cross-browser matrix, nightly scheduled run
+* ✔️ GitHub Actions CI/CD: pre-flight health check → smoke → full regression → cross-browser matrix, nightly scheduled run
 * ✔️ Dockerized execution
 * ✔️ Maven for dependency and build management
 
@@ -82,7 +86,8 @@ To generate fresh screenshots for this section, run the suite locally (`mvn clea
 * **BDD Framework:** Cucumber (Gherkin) 7
 * **Test Runner:** TestNG
 * **Build Tool:** Maven
-* **API checks:** REST Assured
+* **API checks:** REST Assured (transport smoke + OAuth2-authenticated Standard REST API)
+* **Data/ETL checks:** JDBC (MySQL Connector/J), opt-in against a self-hosted instance
 * **Coverage:** JaCoCo
 * **Reporting:** Cucumber HTML/JSON, Allure
 * **Containerization:** Docker
@@ -124,6 +129,10 @@ All environment-specific values are centralized in `utils/ConfigReader.java` and
 | `browser` | `chrome` | `chrome` or `firefox` |
 | `headless` | `false` (`true` automatically when the `CI` env var is set) | Headless browser execution |
 | `timeout.seconds` | `20` | Default explicit-wait timeout |
+| `oauth2.base.url` / `api.base.url` / `fhir.base.url` | derived from `base.url` | OAuth2, Standard API, and FHIR API base URLs — see [REST API](#rest-api) |
+| `api.username` / `api.password` | `admin` / `pass` | Credentials used for the OAuth2 Password Grant |
+| `db.enabled` | `false` | Explicit opt-in required before any Data/ETL check attempts a connection |
+| `db.host` / `db.port` / `db.name` / `db.user` / `db.password` | `localhost` / `3306` / `openemr` / `openemr` / `openemr` | Direct MySQL connection for `etl.DataQualityChecks` — see [Data & ETL Testing](#data--etl-testing) |
 
 Example:
 
@@ -144,7 +153,7 @@ mvn test -Dcucumber.filter.tags="@security"              # any tag, ad hoc
 mvn test -DsuiteXmlFile=testng-parallel.xml              # parallel execution
 ```
 
-Or run any of the category-specific runner classes (`SmokeRunner`, `RegressionRunner`, `SecurityRunner`, `AccessibilityRunner`, `PerformanceRunner`, `ApiRunner`, `E2ERunner`, `NavigationRunner`, `LifecycleRunner`, `DeviceRunner`, `PermissionRunner`, `NegativeRunner`, `DataDrivenRunner`, `InterruptRunner`, `CrossBrowserRunner`, `ParallelRunner`) directly from Eclipse/IntelliJ via **Run As → TestNG Test**.
+Or run any of the category-specific runner classes (`SmokeRunner`, `RegressionRunner`, `SecurityRunner`, `AccessibilityRunner`, `PerformanceRunner`, `ApiRunner`, `AuthenticatedApiRunner`, `E2ERunner`, `NavigationRunner`, `LifecycleRunner`, `DeviceRunner`, `PermissionRunner`, `NegativeRunner`, `DataDrivenRunner`, `InterruptRunner`, `CrossBrowserRunner`, `ParallelRunner`) directly from Eclipse/IntelliJ via **Run As → TestNG Test**. The opt-in, environment-gated suites (`testng-authenticated-api.xml`, `testng-data-quality.xml`) need their `-D` properties set first — see [REST API](#rest-api) and [Data & ETL Testing](#data--etl-testing).
 
 ---
 
@@ -168,21 +177,26 @@ project-root/
 ├── src/test/java/
 │   ├── pages/            # Page Object Model (POM) classes
 │   ├── stepdefinitions/  # Step definition classes + Hooks
+│   ├── etl/              # Data/ETL quality checks (opt-in, direct JDBC)
 │   ├── unit/             # Plain TestNG unit tests (no browser)
 │   ├── runners/          # One TestNG/Cucumber runner per test category
-│   └── utils/            # ConfigReader, TestDataGenerator
+│   └── utils/            # ConfigReader, TestDataGenerator, ApiAuthHelper, DatabaseConnectionHelper, PreflightHealthCheck
 │
 ├── src/test/resources/
 │   ├── features/          # Gherkin feature files
 │   └── allure.properties  # Allure results directory config
 │
-├── .github/workflows/ci.yml   # GitHub Actions pipeline
-├── Dockerfile / .dockerignore # Containerized execution
-├── testng.xml                 # Full suite (Cucumber + unit tests)
-├── testng-smoke.xml           # Smoke-only suite
-├── testng-parallel.xml        # Parallel execution suite
-├── testng-cross-browser.xml   # Cross-browser smoke suite
-├── pom.xml                    # Maven dependencies and plugins
+├── docs/qa/                    # Test plan, test case register, traceability matrix, defect log
+├── .github/workflows/ci.yml    # GitHub Actions pipeline
+├── Dockerfile / .dockerignore  # Containerized execution
+├── testng.xml                  # Full suite (Cucumber + unit tests)
+├── testng-smoke.xml            # Smoke-only suite
+├── testng-preflight.xml        # Pre-flight demo health check
+├── testng-parallel.xml         # Parallel execution suite
+├── testng-cross-browser.xml    # Cross-browser smoke suite
+├── testng-authenticated-api.xml # Opt-in: OAuth2 Password Grant API scenarios
+├── testng-data-quality.xml     # Opt-in: direct-database data quality checks
+├── pom.xml                     # Maven dependencies and plugins
 ├── LICENSE
 └── README.md
 ```
@@ -191,9 +205,9 @@ project-root/
 
 ## Database Overview
 
-This repository does not own a database. It's a UI/API test client for OpenEMR's demo instance, which manages its own MySQL-backed data independently (and the public demo periodically resets its data — tests should never assume long-term persistence of records they create). There's no schema, migration, or ORM layer in this codebase to document.
+This repository does not own a database, run migrations, or maintain a schema/ORM layer — it's a UI/API/data test client for OpenEMR's own MySQL-backed data, which the public demo manages independently and periodically resets (tests should never assume long-term persistence of records they create).
 
-If you're running this suite against a self-hosted OpenEMR instance instead of the public demo, that instance's own database is entirely separate from this repo and outside its scope — point `base.url` (see [Configuration](#configuration)) at your instance and the suite behaves the same way.
+It does include a read-only, opt-in JDBC data-quality layer (`etl/DataQualityChecks.java`) for when the suite is pointed at a self-hosted instance instead of the public demo — see [Data & ETL Testing](#data--etl-testing). That instance's database is entirely separate from this repo; point `base.url`/`db.*` (see [Configuration](#configuration)) at it and the suite behaves the same way.
 
 ---
 
@@ -228,7 +242,9 @@ The suite is organized into tagged categories so any slice can be run independen
 | E2E flow | `@e2e` | 1 | Full patient onboarding: login → add patient → add insurance → logout |
 | Cross-browser | `@cross-browser` | 1 (×N browsers) | Same smoke scenario replayed on Chrome and Firefox via `-Dbrowser` |
 | Interrupt tests | `@interrupt` | 2 | Tab-switch and mid-form refresh (adapted from mobile call/SMS interrupts) |
-| API-integrated | `@api` | 2 | REST Assured checks against the login endpoint (status, content-type, latency) |
+| API-integrated | `@api` | 10 | REST Assured checks: login-endpoint transport smoke (2) + OAuth2 discovery/registration/error-handling/authenticated CRUD against the Standard REST API (8) |
+| API — env-gated | `@requires-password-grant` | 4 | Authenticated Standard API scenarios needing OAuth2 Password Grant enabled on the target instance — excluded from the default suite, see [REST API](#rest-api) |
+| Data/ETL — opt-in | *(TestNG, `etl.DataQualityChecks`)* | 5 | Null/duplicate/referential-integrity/reconciliation checks against a self-hosted instance's MySQL schema — see [Data & ETL Testing](#data--etl-testing) |
 | Unit | *(none — plain TestNG)* | 13 | `ConfigReaderTest` / `TestDataGeneratorTest`, no browser required |
 
 Underlying functional coverage: authentication (valid/invalid login, malicious payloads, whitespace handling, session redirects), patient management (add, search, insurance, gender/DOB validation), dashboard & navigation (module menu visibility, sub-menu expansion, browser back/forward), form handling (mandatory fields, dropdown options, invalid date formats), and UI/accessibility validation (element visibility, alt text, labeled inputs).
@@ -333,7 +349,38 @@ The `@e2e` tagged scenario in `patient.feature` chains multiple modules into a s
 
 ## REST API
 
-This repository doesn't expose or own a REST API — there's no server component here. The `@api` tagged scenarios in `api.feature` / `ApiSteps.java` are HTTP-layer smoke checks against OpenEMR's public login endpoint using REST Assured (status code, content type, response latency), which complement the UI suite by catching transport-level regressions faster than a full browser test would. They are not a general-purpose API test suite against an OpenEMR REST API, since the public demo doesn't expose an authenticated one for this framework to call.
+This repository doesn't expose or own a REST API — there's no server component here. It does, however, drive OpenEMR's **own** OAuth2-secured Standard REST API as a real test client, in two layers:
+
+1. **Transport-level smoke checks** (`api.feature` / `ApiSteps.java`) — HTTP-layer checks against OpenEMR's public login endpoint (status code, content type, response latency), catching transport regressions faster than a full browser test would.
+2. **Authenticated Standard API checks** (`standard_api.feature` / `ApiSteps.java` / `utils/ApiAuthHelper.java`) — real OAuth2 dynamic client registration (RFC 7591) and Password Grant token acquisition against `{host}/oauth2/default`, followed by Bearer-token calls to `{host}/apis/default/api` covering: discovery-document validation, 401 rejection with no/invalid token, authenticated Patient list/create, the documented `{validationErrors, internalErrors, data}` response envelope, and error-handling (422 validation errors, 404 not found).
+
+Layer 2 needs OpenEMR's OAuth2 Password Grant enabled on the target instance — an admin toggle that's **off by default** and explicitly "not recommended for production" per OpenEMR's own docs, independent of whether the Standard API itself is enabled. Rather than let a demo with that toggle off turn into permanent CI noise, those scenarios are tagged `@requires-password-grant` and excluded from the default `TestRunner`/`ApiRunner` tag filters — run them deliberately via `AuthenticatedApiRunner` / `testng-authenticated-api.xml` against an instance known to support it. See `utils/ApiAuthHelper.java` for the exact reasoning and `docs/qa/Test-Plan.md` §5 for the general pattern this follows.
+
+---
+
+## Data & ETL Testing
+
+Direct-database data quality checks against OpenEMR's MySQL schema, in `etl/DataQualityChecks.java` — the third leg of coverage alongside the UI suite (Selenium) and API suite (REST Assured): required-field/null checks, duplicate patient detection, referential integrity (encounters and problem/allergy/medication lists must reference a real patient), and a generic source-to-target row-count reconciliation check.
+
+The shared public demo doesn't expose direct MySQL access, so this suite only runs against a self-hosted or Dockerized OpenEMR instance you control, and requires an explicit `-Ddb.enabled=true` opt-in — without it (or without a reachable database) the whole class skips with a specific message rather than failing. See **`docs/qa/Data-ETL-Testing.md`** for the Docker setup and the full list of checks.
+
+```bash
+mvn -B test -DsuiteXmlFile=testng-data-quality.xml -Ddb.enabled=true -Ddb.host=localhost -Ddb.name=openemr -Ddb.user=openemr -Ddb.password=...
+```
+
+---
+
+## Test Management & QA Documentation
+
+Jira/Zephyr-style test management artifacts live in **`docs/qa/`**, tracking this suite the way a QA team would rather than leaving coverage implicit in the feature files:
+
+| Document | Purpose |
+|---|---|
+| `Test-Plan.md` | Scope, strategy per test level, entry/exit criteria, environment constraints and how they're mitigated |
+| `Test-Case-Register.xlsx` | Every written scenario (47 as of this writing) with priority, type, component, and automation status, plus a live formula-driven Dashboard tab |
+| `Traceability-Matrix.xlsx` | Requirement → test case → feature file → defect mapping, so coverage gaps are visible at a glance |
+| `Defect-Log.xlsx` | Jira/Zephyr-style defect tracker, seeded with this project's own real defect history (login-race condition, brittle menu locators, a corrupted `pom.xml`, the shared-demo credential flakiness) |
+| `Data-ETL-Testing.md` | Setup and reference for the data quality checks above |
 
 ---
 
@@ -359,8 +406,8 @@ The image is based on `maven:3.9.6-eclipse-temurin-11` with Google Chrome (stabl
 
 `.github/workflows/ci.yml` runs on every push/PR to `main`, on manual dispatch, and nightly at 03:00 UTC:
 
-1. **smoke** — fast headless Chrome smoke suite, gates the rest of the pipeline
-2. **regression** — full 79-scenario suite, headless Chrome, generates JaCoCo + Allure reports and uploads all report artifacts (Cucumber HTML/JSON, JaCoCo site, Allure report)
+1. **smoke** — a pre-flight step first confirms the target demo is up and accepting the configured credentials (`PreflightHealthCheck`, ~20-30s; see `docs/qa/Test-Plan.md` §5), then the headless Chrome smoke suite runs and gates the rest of the pipeline
+2. **regression** — full suite (everything except `@requires-password-grant`, see [REST API](#rest-api)), headless Chrome, generates JaCoCo + Allure reports and uploads all report artifacts (Cucumber HTML/JSON, JaCoCo site, Allure report)
 3. **cross-browser** — the smoke scenario replayed on Chrome and Firefox in parallel matrix jobs
 
 Reports are uploaded as workflow artifacts so failures can be triaged without re-running locally.
@@ -374,17 +421,19 @@ Reports are uploaded as workflow artifacts so failures can be triaged without re
 * **Tag-scoped execution.** Every category (security, accessibility, performance, negative, etc.) has its own runner so a reviewer or CI job can run exactly the relevant slice instead of the entire suite.
 * **Explicit waits, not fixed sleeps.** All step definitions use `WebDriverWait`/`ExpectedConditions` rather than `Thread.sleep`, to keep the suite fast and reduce flakiness against a shared public demo environment.
 * **Data-driven where it multiplies coverage cheaply.** `Scenario Outline` + `Examples` covers combinatorial input variations (invalid credentials, languages, viewport sizes, gender values) without duplicating step logic.
-* **Explicitly out of scope:** load/stress testing, real PHI or production data, and any capability (REST API, database, admin dashboard) this repo doesn't itself own — see the sections above for why those are addressed narrowly (API smoke checks) or not at all.
+* **Environment-gated, not silently skipped.** Capabilities that depend on a third party's configuration rather than this framework's own code (OAuth2 Password Grant, direct database access) get their own opt-in runner and an explicit `-D` flag instead of being folded into the suites that gate CI — see `docs/qa/Test-Plan.md` §5.
+* **Explicitly out of scope:** load/stress testing, real PHI or production data, FHIR API coverage (base URL is configured, no scenarios written yet), and any infrastructure (admin dashboard, database) this repo doesn't itself own.
 
 ---
 
 ## Roadmap
 
-* Extend REST Assured coverage to authenticated API calls, if/when a test-friendly API becomes available
+* Run `AuthenticatedApiRunner` and `etl.DataQualityChecks` in CI against a self-hosted OpenEMR instance, once one is stood up for this project (both already work today — see [REST API](#rest-api) and [Data & ETL Testing](#data--etl-testing) — they just aren't runnable against the shared public demo)
+* FHIR API coverage (`ConfigReader.getFhirBaseUrl()` is already wired up; no scenarios written yet)
 * Expand cross-browser matrix to Edge and Safari
 * Data-driven testing from external Excel/JSON/CSV sources
-* Database validation (SQL) against a self-hosted OpenEMR instance, if one is stood up for this project
 * Visual regression checks (screenshot diffing) layered on top of the existing failure-screenshot capture
+* AI-assisted test authoring/maintenance (e.g. generating new scenarios or triaging failures with an LLM) — deliberately not started yet, see `docs/qa/Test-Plan.md`
 
 ---
 
