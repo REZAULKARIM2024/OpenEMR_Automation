@@ -28,11 +28,16 @@ continuing.
 *(An earlier version of this doc pointed at
 `openemr-devops/docker/openemr/docker-compose.yml` — that path doesn't exist in the repo, and
 even OpenEMR's own "easy dev" compose file assumes it's run from inside a full clone of the
-`openemr/openemr` repo, so a bare `curl` of it doesn't work standalone. The file below is
-self-contained: save it as-is, no repo clone needed.)*
+`openemr/openemr` repo, so a bare `curl` of it doesn't work standalone.)*
 
-Create a folder and save this as `docker-compose.yml` inside it (official `openemr/openemr` +
-`mariadb` images from Docker Hub):
+**Already done for you:** `docker-compose.local-openemr.yml` at the repo root is this exact
+compose file, ready to run — no copy-pasting needed:
+
+```bash
+docker compose -f docker-compose.local-openemr.yml up -d
+```
+
+Its contents (official `openemr/openemr` + `mariadb` images from Docker Hub), for reference:
 
 ```yaml
 services:
@@ -80,16 +85,17 @@ volumes:
   openemr_sites:
 ```
 
-Then, from that folder:
+From the repo root (once Docker Desktop is installed and running):
 
 ```bash
-docker compose up -d
+docker compose -f docker-compose.local-openemr.yml up -d
 ```
 
 First boot takes several minutes — OpenEMR runs its own installer and schema migrations before
 the app (and therefore a stable schema for these checks) is ready. Watch progress with
-`docker compose logs -f openemr` until you see it settle; `docker compose ps` should show both
-containers as `healthy`/`running`.
+`docker compose -f docker-compose.local-openemr.yml logs -f openemr` until you see it settle;
+`docker compose -f docker-compose.local-openemr.yml ps` should show both containers as
+`healthy`/`running`.
 
 Once it's up:
 - **App:** `https://localhost:9300/interface/login/login.php` (self-signed cert — your browser
@@ -98,7 +104,8 @@ Once it's up:
   `openemr` (matches `ConfigReader`'s defaults below, so no `-Ddb.*` overrides are needed with
   this compose file as written).
 
-To tear it down: `docker compose down` (add `-v` to also delete the volumes and start fresh).
+To tear it down: `docker compose -f docker-compose.local-openemr.yml down` (add `-v` to also
+delete the volumes and start fresh).
 
 ## Running the checks
 

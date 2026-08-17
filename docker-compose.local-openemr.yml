@@ -1,0 +1,60 @@
+# Local target instance for docs/qa/Data-ETL-Testing.md and the
+# @requires-password-grant API scenarios (see README's "REST API" section).
+#
+# NOT used by the framework's own Dockerfile (that one packages the *test
+# runner*; this one stands up an OpenEMR + MySQL instance to test AGAINST).
+# Only meaningful once Docker Desktop is installed and running.
+#
+# Usage:
+#   docker compose -f docker-compose.local-openemr.yml up -d
+#   docker compose -f docker-compose.local-openemr.yml logs -f openemr   # watch first-boot progress
+#   docker compose -f docker-compose.local-openemr.yml down             # stop
+#   docker compose -f docker-compose.local-openemr.yml down -v          # stop + wipe data, start fresh
+#
+# Once healthy:
+#   App:   https://localhost:9300/interface/login/login.php  (self-signed cert; admin / pass)
+#   MySQL: localhost:3306, database "openemr", user/password "openemr"/"openemr"
+#          (matches ConfigReader's Data/ETL defaults -- no -Ddb.* overrides needed)
+
+services:
+  mysql:
+    image: mariadb:11
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: openemr
+      MYSQL_USER: openemr
+      MYSQL_PASSWORD: openemr
+    ports:
+      - "3306:3306"
+    volumes:
+      - openemr_mysql:/var/lib/mysql
+
+  openemr:
+    image: openemr/openemr:latest
+    restart: always
+    ports:
+      - "8300:80"
+      - "9300:443"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_ROOT_PASS: root
+      MYSQL_USER: openemr
+      MYSQL_PASS: openemr
+      MYSQL_DATABASE: openemr
+      OE_USER: admin
+      OE_PASS: pass
+      # Auto-enable the Standard REST API and OAuth2 Password Grant on first
+      # boot, so AuthenticatedApiRunner works against this instance without
+      # a manual Administration > Config > Connectors step.
+      OPENEMR_SETTING_rest_api: 1
+      OPENEMR_SETTING_rest_system_scopes_api: 1
+      OPENEMR_SETTING_oauth_password_grant: 3
+    depends_on:
+      - mysql
+    volumes:
+      - openemr_sites:/var/www/localhost/htdocs/openemr/sites
+
+volumes:
+  openemr_mysql:
+  openemr_sites:
