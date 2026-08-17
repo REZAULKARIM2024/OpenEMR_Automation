@@ -18,33 +18,103 @@ set or the database can't be reached. See `etl/DataQualityChecks.java` and
 
 ## Setting up a target instance (Docker)
 
-OpenEMR publishes an official Docker Compose stack that includes MySQL:
+**Prerequisite: Docker Desktop.** The `docker` command only works if Docker Desktop is installed
+and running. On Windows: download and install it from
+[docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/), which
+also enables the WSL2 backend it needs — then open a **new** terminal (the one you had open
+before installing won't pick up the updated PATH) and confirm with `docker --version` before
+continuing.
+
+*(An earlier version of this doc pointed at
+`openemr-devops/docker/openemr/docker-compose.yml` — that path doesn't exist in the repo, and
+even OpenEMR's own "easy dev" compose file assumes it's run from inside a full clone of the
+`openemr/openemr` repo, so a bare `curl` of it doesn't work standalone. The file below is
+self-contained: save it as-is, no repo clone needed.)*
+
+Create a folder and save this as `docker-compose.yml` inside it (official `openemr/openemr` +
+`mariadb` images from Docker Hub):
+
+```yaml
+services:
+  mysql:
+    image: mariadb:11
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: openemr
+      MYSQL_USER: openemr
+      MYSQL_PASSWORD: openemr
+    ports:
+      - "3306:3306"
+    volumes:
+      - openemr_mysql:/var/lib/mysql
+
+  openemr:
+    image: openemr/openemr:latest
+    restart: always
+    ports:
+      - "8300:80"
+      - "9300:443"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_ROOT_PASS: root
+      MYSQL_USER: openemr
+      MYSQL_PASS: openemr
+      MYSQL_DATABASE: openemr
+      OE_USER: admin
+      OE_PASS: pass
+      # Auto-enable the Standard REST API and OAuth2 Password Grant on first
+      # boot, so AuthenticatedApiRunner (see the REST API section of the
+      # README) works against this instance without a manual Administration
+      # > Config > Connectors step.
+      OPENEMR_SETTING_rest_api: 1
+      OPENEMR_SETTING_rest_system_scopes_api: 1
+      OPENEMR_SETTING_oauth_password_grant: 3
+    depends_on:
+      - mysql
+    volumes:
+      - openemr_sites:/var/www/localhost/htdocs/openemr/sites
+
+volumes:
+  openemr_mysql:
+  openemr_sites:
+```
+
+Then, from that folder:
 
 ```bash
-mkdir openemr-docker && cd openemr-docker
-curl -O https://raw.githubusercontent.com/openemr/openemr-devops/master/docker/openemr/docker-compose.yml
 docker compose up -d
 ```
 
-Once it's up, the MySQL container is reachable on `localhost:3306` (default database `openemr`,
-default user/password documented in that compose file — check it, since OpenEMR has changed
-these across releases). Give the stack a few minutes on first boot; OpenEMR runs its own schema
-migrations before the app (and therefore a stable schema for these checks) is ready.
+First boot takes several minutes — OpenEMR runs its own installer and schema migrations before
+the app (and therefore a stable schema for these checks) is ready. Watch progress with
+`docker compose logs -f openemr` until you see it settle; `docker compose ps` should show both
+containers as `healthy`/`running`.
+
+Once it's up:
+- **App:** `https://localhost:9300/interface/login/login.php` (self-signed cert — your browser
+  will warn, that's expected) — log in with `admin` / `pass`.
+- **MySQL:** reachable on `localhost:3306`, database `openemr`, user `openemr`, password
+  `openemr` (matches `ConfigReader`'s defaults below, so no `-Ddb.*` overrides are needed with
+  this compose file as written).
+
+To tear it down: `docker compose down` (add `-v` to also delete the volumes and start fresh).
 
 ## Running the checks
 
+With the compose file above, `ConfigReader`'s defaults (`localhost:3306`, database `openemr`,
+user/password `openemr`/`openemr`) already match, so only the explicit opt-in flag is needed:
+
 ```bash
-mvn -B test -DsuiteXmlFile=testng-data-quality.xml \
-  -Ddb.enabled=true \
-  -Ddb.host=localhost \
-  -Ddb.port=3306 \
-  -Ddb.name=openemr \
-  -Ddb.user=openemr \
-  -Ddb.password=<your-password>
+mvn -B test -DsuiteXmlFile=testng-data-quality.xml -Ddb.enabled=true
 ```
 
-All five properties have defaults matching a typical local Docker setup (see
-`ConfigReader.getDb*()`); only `db.enabled=true` is mandatory since it's the explicit opt-in.
+If your instance uses different values, override any of them individually:
+
+```bash
+mvn -B test -DsuiteXmlFile=testng-data-quality.xml \
+  -Ddb.enabled=true -Ddb.host=localhost -Ddb.port=3306 -Ddb.name=openemr -Ddb.user=openemr -Ddb.password=<your-password>
+```
 
 ## What's checked
 
